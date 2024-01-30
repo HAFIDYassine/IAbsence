@@ -1,18 +1,21 @@
 package com.example.iabsence
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import android.content.Intent
+import android.provider.MediaStore
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun UseCamera() {
-    Button(onClick = { /*TODO*/ },
-        modifier = Modifier.fillMaxWidth(),
-        ) {
-        Text(text = "Use Camera")
+    val context = LocalContext.current
+    val intent = remember { Intent(MediaStore.ACTION_IMAGE_CAPTURE) }
 
+    LaunchedEffect(Unit) {
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
+        }
     }
-
 }
+
