@@ -70,4 +70,13 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // CameraX
+    val camerax_version = "1.0.1"
+    implementation ("androidx.camera:camera-camera2:$camerax_version")
+    implementation ("androidx.camera:camera-lifecycle:$camerax_version")
+    implementation ("androidx.camera:camera-view:1.0.0-alpha27")
+
+    implementation("io.coil-kt:coil-compose:1.4.0")
+
 }
