@@ -6,13 +6,12 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 
@@ -22,7 +21,6 @@ import androidx.core.content.ContextCompat
 import coil.compose.rememberImagePainter
 import com.example.iabsence.ml.FaceRecognitionModel
 
-import com.example.iabsence.ui.theme.IAbsenceTheme
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.File
@@ -98,11 +96,9 @@ class MainActivity : ComponentActivity() {
 
     private fun handleImageCapture(uri: Uri) {
         Log.i("IAbsence", "Image captured: $uri")
-        photoUri = uri
-        shouldShowPhoto.value = true
 
         // Load the image into a Bitmap
-        val bitmap = BitmapFactory.decodeFile(photoUri.path)
+        val bitmap = BitmapFactory.decodeFile(uri.path)
 
         // Resize the Bitmap to 224x224 pixels which is the input size of the model
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
@@ -122,25 +118,30 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Load the model
+        val classLabels = arrayOf("CR7", "Hakimi", "Messi")
+
         val model = FaceRecognitionModel.newInstance(this)
 
-        // Create the inputs for the model
         val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 224, 224, 3), DataType.FLOAT32)
         inputFeature0.loadBuffer(byteBuffer)
 
-        // Run the model and get the result
         val outputs = model.process(inputFeature0)
         val outputFeature0 = outputs.outputFeature0AsTensorBuffer
 
-        // Map the output indices to names
-        val names = arrayOf("messi", "CR7", "ppp")
         val maxIndex = outputFeature0.floatArray.indices.maxByOrNull { outputFeature0.floatArray[it] } ?: -1
-        val name = names[maxIndex]
 
-        Log.i("IAbsence", "Model output: $name")
+        val className = classLabels[maxIndex]
+
+        Log.i("IAbsence", "Model output: $className")
+
+        runOnUiThread {
+            Toast.makeText(this, "Bienvenue $className !!", Toast.LENGTH_LONG).show()
+        }
 
         model.close()
+
+        // Delete the photo file
+        uri.path?.let { File(it).delete() }
     }
 
     private fun getOutputDirectory(): File {
