@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import coil.compose.rememberImagePainter
-import com.example.iabsence.ml.FaceRecognitionModel2
+import com.example.iabsence.ml.FaceRecognitionModel
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -129,8 +129,8 @@ private fun handleImageCapture(uri: Uri): FloatArray {
         }
     }
 
-    // Load the model
-        val model = FaceRecognitionModel2.newInstance(this)
+        // Load the model
+        val model = FaceRecognitionModel.newInstance(this)
 
         // Create an input tensor
         val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 224, 224, 3), DataType.FLOAT32)
@@ -140,12 +140,43 @@ private fun handleImageCapture(uri: Uri): FloatArray {
         val outputs = model.process(inputFeature0)
         val outputFeature0 = outputs.outputFeature0AsTensorBuffer
 
-        // Log the model output
+        // Define your class labels
+        val classLabels = arrayOf("Alkaya", "Riane", "Yassine")
+
+        // Get the index of the highest confidence score
+        val maxIndex = outputFeature0.floatArray.indices.maxByOrNull { outputFeature0.floatArray[it] } ?: -1
+
+        // Get the class label with the highest confidence score
+        val className = classLabels[maxIndex]
+
+        // Log the model output and the associated class label
         Log.d("IAbsence", "Model output: ${outputFeature0.floatArray.contentToString()}")
+        Log.d("MAX Pourcentage",maxIndex.toString())
+        Log.d("IAbsence", "Predicted class: $className")
 
         runOnUiThread {
-            Toast.makeText(this, "Bienvenue ${outputFeature0.floatArray.contentToString()} !!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Bienvenue $className !!", Toast.LENGTH_LONG).show()
         }
+/*
+        val jsonObject = JSONObject()
+        jsonObject.put("name", className)
+        jsonObject.put("time", formattedTime)
+        val client = OkHttpClient()
+
+        val JSON = "application/json; charset=utf-8".toMediaType()
+        val body = jsonObject.toString().toRequestBody(JSON)
+
+        val request = Request.Builder()
+            .url("http://10.0.80.184:5000/android_ml")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+            println(response.body?.string())
+        }
+*/
         // Release model resources if no longer used
         model.close()
 
