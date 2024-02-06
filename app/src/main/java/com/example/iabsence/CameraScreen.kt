@@ -31,6 +31,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
+
 private suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
     ProcessCameraProvider.getInstance(this).also { cameraProvider ->
         cameraProvider.addListener({
@@ -100,6 +101,7 @@ private fun takePhoto(
     onImageCaptured: (Uri) -> Unit,
     onError: (ImageCaptureException) -> Unit
 ) {
+
 
     val photoFile = File(
         outputDirectory,
