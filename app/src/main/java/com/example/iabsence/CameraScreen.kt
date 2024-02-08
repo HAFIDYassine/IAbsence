@@ -1,8 +1,11 @@
 package com.example.iabsence
 
 import android.content.Context
+import android.graphics.drawable.Icon
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -29,7 +32,13 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 
 private suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
@@ -40,6 +49,7 @@ private suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspend
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.M)
 @Composable
 fun CameraView(
     outputDirectory: File,
@@ -47,15 +57,14 @@ fun CameraView(
     onImageCaptured: (Uri) -> Unit,
     onError: (ImageCaptureException) -> Unit
 ) {
-    // 1
-    val lensFacing = CameraSelector.LENS_FACING_FRONT
+    var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_FRONT) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val preview = Preview.Builder().build()
     val previewView = remember { PreviewView(context) }
     val imageCapture: ImageCapture = remember { ImageCapture.Builder().build() }
-    val cameraSelector = CameraSelector.Builder()
+    var cameraSelector = CameraSelector.Builder()
         .requireLensFacing(lensFacing)
         .build()
 
@@ -87,9 +96,24 @@ fun CameraView(
             },
             modifier = Modifier.padding(32.dp)
         ) {
-            Text(text = "Prendre la photo")
+            Text( "Prendre la photo")
         }
 
+        IconButton(
+            onClick = {
+                lensFacing = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                    CameraSelector.LENS_FACING_BACK
+                } else {
+                    CameraSelector.LENS_FACING_FRONT
+                }
+                cameraSelector = CameraSelector.Builder()
+                    .requireLensFacing(lensFacing)
+                    .build()
+            },
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+        ) {
+            Icon(painter = painterResource(id = R.drawable.ic_switch_camera), contentDescription = "Changer de caméra")
+        }
     }
 }
 

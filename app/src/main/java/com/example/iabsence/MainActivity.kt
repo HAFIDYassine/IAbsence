@@ -1,5 +1,6 @@
 package com.example.iabsence
 
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -101,11 +102,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("SimpleDateFormat")
     @RequiresApi(Build.VERSION_CODES.N)
 private fun handleImageCapture(uri: Uri): FloatArray {
     val currentTime = Calendar.getInstance().time
-    val formatter = android.icu.text.SimpleDateFormat("dd/MM/yyyy-HH:mm:ss")
+    val formatter = android.icu.text.SimpleDateFormat("HH:mm:ss")
     var formattedTime = formatter.format(currentTime)
+
+        val dayFormatter = android.icu.text.SimpleDateFormat("yyyy-MM-dd")
+        var formattedDay = formatter.format(currentTime)
+
     Log.i("IAbsence", "Image captured: $uri")
 
     // Load the image into a Bitmap
@@ -155,30 +161,47 @@ private fun handleImageCapture(uri: Uri): FloatArray {
         Log.d("IAbsence", "Predicted class: $className")
 
         runOnUiThread {
-            Toast.makeText(this, "Bienvenue $className !!", Toast.LENGTH_LONG).show()
+            if (outputFeature0.floatArray[maxIndex] < 0.75) {
+                Toast.makeText(this, "Étudiant non reconnu", Toast.LENGTH_SHORT).show()
+
+
+            } else {
+                Toast.makeText(this, "Bienvenue $className !!", Toast.LENGTH_SHORT).show()
+
+                val jsonObject = JSONObject()
+                jsonObject.put("name", className)
+                jsonObject.put("time", formattedTime)
+                jsonObject.put("image", uri.path)
+                jsonObject.put("time", formattedDay)
+
+                val client = OkHttpClient()
+
+                val JSON = "application/json; charset=utf-8".toMediaType()
+                val body = jsonObject.toString().toRequestBody(JSON)
+
+                val request = Request.Builder()
+                    .url("http://10.0.80.184:5000/android_ml")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                    println(response.body?.string())
+                }
+
+            }
         }
-/*
-        val jsonObject = JSONObject()
-        jsonObject.put("name", className)
-        jsonObject.put("time", formattedTime)
-        val client = OkHttpClient()
 
-        val JSON = "application/json; charset=utf-8".toMediaType()
-        val body = jsonObject.toString().toRequestBody(JSON)
 
-        val request = Request.Builder()
-            .url("http://10.0.80.184:5000/android_ml")
-            .post(body)
-            .build()
-
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
-
-            println(response.body?.string())
-        }
-*/
         // Release model resources if no longer used
         model.close()
+
+        // Delete the photo file
+        uri.path?.let { File(it).delete() }
+
+        // Return the model output
+        return outputFeature0.floatArray
 
         // Delete the photo file
         uri.path?.let { File(it).delete() }
@@ -200,3 +223,4 @@ private fun handleImageCapture(uri: Uri): FloatArray {
         cameraExecutor.shutdown()
     }
 }
+
